@@ -35,6 +35,9 @@ from .data_service import REP_IDS
 
 MODEL_NAME = "gpt-4o-mini"
 
+# Contains a tax identifier, date of birth, card-on-file number, and credit-check reference; never send it to the model.
+SENSITIVE_PROSPECT_FIELDS = ("billing_qualification",)
+
 # ---------------------------------------------------------------------------
 # Tools
 # ---------------------------------------------------------------------------
@@ -58,7 +61,11 @@ def build_prospect_profile(prospect_id: str) -> dict:
         return {"prospect_profile": None, "found": False}
     built = {
         "prospect_id": prospect_id,
-        **rec,
+        "name": rec["name"],
+        "email": rec["email"],
+        "annual_revenue": rec["annual_revenue"],
+        "enrichment_source": rec["enrichment_source"],
+        "disqualified": rec["disqualified"],
         "engagement_history": data_service.fetch_engagement_history(prospect_id),
         "account_details": data_service.fetch_account_details(prospect_id),
         "tech_stack": data_service.fetch_tech_stack(prospect_id),
@@ -133,7 +140,7 @@ def get_prospect(prospect_id: str) -> dict:
     contact = {
         "prospect_id": prospect_id,
         **{k: v for k, v in record.items()
-           if k not in ("engagement_history", "account_details", "tech_stack")},
+           if k not in ("engagement_history", "account_details", "tech_stack", *SENSITIVE_PROSPECT_FIELDS)},
     }
     return {"prospect": contact, "found": True}
 
